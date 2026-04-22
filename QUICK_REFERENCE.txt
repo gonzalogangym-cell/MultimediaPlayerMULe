@@ -1,0 +1,95 @@
+===============================================
+MULTIMEDIA PLAYER - QUICK REFERENCE
+===================================
+
+FILE DISPLAY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Displays the name of the currently loaded media file.
+
+VIDEO DISPLAY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Black area where video is displayed.
+
+* Video files: the video is shown here.
+* Audio files: the area remains black while audio plays.
+* The video is rendered using VLC inside the application window.
+
+OPEN FILE BUTTON
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Open File
+
+* Opens a dialog to select a media file.
+* Supported formats include:
+  MP3, MP4, WAV, AVI, MKV, MOV and others.
+* Loads the selected file into the player.
+
+PLAYBACK CONTROLS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Play   - Starts playback from the current position
+Pause  - Pauses playback
+Stop   - Stops playback and resets position to the beginning
+
+VOLUME CONTROL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Volume: [====●====] 50%
+
+* Drag the slider to adjust volume.
+* Left → decrease volume
+* Right → increase volume
+* Range: 0% to 100%
+
+PROGRESS BAR (TIMELINE)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+* Displays current playback position.
+* Updates automatically during playback.
+* You can move the slider to jump to a different part of the media.
+
+TIME DISPLAY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+00:45                                    03:30
+└─────────────────────────────────────────┘
+Current Time    →    Total Duration
+
+* Shows playback time in MM:SS format.
+* Updates in real time.
+
+FULL SCREEN MODE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Full Screen Button
+
+* Switches between normal view and full screen.
+* Changes button text to "Exit Full Screen" when active.
+
+Keyboard shortcuts:
+
+* F       → Toggle full screen mode
+* Esc     → Exit full screen
+
+QUICK START
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Click "Open File"
+2. Select a media file
+3. Click "Play"
+4. Adjust volume if needed
+5. Use Play / Pause / Stop controls
+
+TIPS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+* You can open a new file at any time.
+* The current file will be replaced.
+* Volume can be adjusted during playback.
+* Use the progress bar to skip parts of the media.
+* Press F to quickly enter full screen.
+* Press Esc to exit full screen.
+
+TECHNICAL NOTE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+* The interface is built using PyQt5.
+* Media playback is handled by VLC.
+* VLC is used to ensure compatibility with multiple formats.
+
+===============================================
