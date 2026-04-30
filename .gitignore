@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Multimedia files (optional - remove if you want to track them)
+*.mp4
+*.avi
+*.mkv
+*.mov
+*.mp3
+*.wav
+
+# OS files
+.DS_Store
+Thumbs.db

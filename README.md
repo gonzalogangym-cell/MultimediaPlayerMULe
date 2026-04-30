@@ -1,52 +1,71 @@
-# Simple Multimedia Player
+# Multimedia Player MULe
 
-A beginner-friendly multimedia player built with Python, PyQt5 and VLC.
+A simple yet powerful multimedia player for academic multimedia analysis, built with Python, PyQt5 and VLC.
 
 ## Features
 
-✅ Open and play audio and video files
-✅ Play, Pause, and Stop controls
-✅ Volume slider (0-100%)
-✅ Progress bar (seek through media)
-✅ Display current file name
-✅ Show current time and total duration
-✅ Full screen mode (button + keyboard shortcut)
-✅ Simple and easy-to-understand code
-✅ Single file implementation
+✅ **Basic playback**: Play, Pause, Stop, Volume, Seek
+✅ **Fullscreen** with keyboard shortcuts
+✅ **Technical information**: Codec, resolution, bitrate, audio/video tracks
+✅ **Export metadata**: Save technical information to JSON
+✅ **Academic Analysis**: Technical interpretation with multimedia explanations
+✅ **Simple interface**: No unnecessary complications
+✅ **Clean code**: Easy to understand and modify
 
 ## Requirements
 
-* Python 3.6+
-* PyQt5
-* VLC Media Player (installed on your system)
+- Python 3.6+
+- PyQt5
+- VLC Media Player
+- FFmpeg (for technical analysis)
 
 ## Installation
 
-### Step 1: Install Python 3
+### 1. Install Python 3
 
 Download from: https://www.python.org/
 
-### Step 2: Install Required Libraries
-
-Open Command Prompt (Windows) or Terminal (Mac/Linux) and run:
+### 2. Install libraries
 
 ```bash
 pip install PyQt5 python-vlc
 ```
 
-Or:
+### 3. Install VLC
+
+Download from: https://www.videolan.org/vlc/
+
+### 4. Install FFmpeg (for technical analysis)
 
 ```bash
-pip3 install PyQt5 python-vlc
+winget install --id=Gyan.FFmpeg
 ```
 
-### Step 3: Install VLC Media Player
+## Usage
 
-Download and install from:
+```bash
+python multimedia_player.py
+```
 
-https://www.videolan.org/vlc/
+### Controls:
 
-⚠️ Make sure VLC is installed (required for media playback).
+- **Open File**: Load multimedia file
+- **Play/Pause/Stop**: Basic controls
+- **Info**: View technical information of the file
+- **Export Info**: Save metadata to JSON
+- **Academic Analysis**: Technical interpretation with multimedia explanations
+
+### Keyboard shortcuts:
+
+- **Space**: Play/Pause
+- **Arrows**: Seek ±10s
+- **M**: Mute
+- **F**: Fullscreen
+- **Esc**: Exit fullscreen
+
+## What is **pycache**?
+
+It is a folder that Python creates automatically to store compiled bytecode files (.pyc) that speed up execution. **It is not part of your source code** - you can ignore it or delete it. It is already in .gitignore so Git won't track it.
 
 ## How to Run
 
@@ -87,30 +106,29 @@ python3 multimedia_player.py
    View current time and total duration
 
 8. **Full Screen**
-
-   * Click "Full Screen" button
-   * Press **F** to toggle full screen
-   * Press **Esc** to exit full screen
+   - Click "Full Screen" button
+   - Press **F** to toggle full screen
+   - Press **Esc** to exit full screen
 
 ## Supported Formats
 
 Supported formats depend on VLC, including:
 
-* **Audio**: MP3, WAV, FLAC, AAC, OGG
-* **Video**: MP4, AVI, MKV, MOV, FLV, WebM
-* And many more
+- **Audio**: MP3, WAV, FLAC, AAC, OGG
+- **Video**: MP4, AVI, MKV, MOV, FLV, WebM
+- And many more
 
 ## Code Structure
 
 The application is implemented in a single file:
 
-* **MultimediaPlayer class** → Main window and player logic
-* **setup_ui()** → Creates the graphical interface
-* **load_media()** → Loads media into VLC
-* **play_media(), pause_media(), stop_media()** → Playback controls
-* **change_volume()** → Volume control
-* **set_position()** → Seek through media
-* **update_ui()** → Updates progress bar and time
+- **MultimediaPlayer class** → Main window and player logic
+- **setup_ui()** → Creates the graphical interface
+- **load_media()** → Loads media into VLC
+- **play_media(), pause_media(), stop_media()** → Playback controls
+- **change_volume()** → Volume control
+- **set_position()** → Seek through media
+- **update_ui()** → Updates progress bar and time
 
 ## Troubleshooting
 
@@ -132,19 +150,19 @@ pip install python-vlc
 
 ### VLC not found (libvlc.dll error)
 
-* Make sure VLC is installed
-* Ensure Python and VLC have the same architecture (both 64-bit recommended)
+- Make sure VLC is installed
+- Ensure Python and VLC have the same architecture (both 64-bit recommended)
 
 ### Video does not display
 
-* Make sure the file format is supported
-* Try a different video file
+- Make sure the file format is supported
+- Try a different video file
 
 ## Notes
 
-* This is a simple educational multimedia player
-* PyQt5 is used for the interface
-* VLC is used as the playback engine to ensure compatibility with multiple formats
-* The project focuses on clarity and simplicity
+- This is a simple educational multimedia player
+- PyQt5 is used for the interface
+- VLC is used as the playback engine to ensure compatibility with multiple formats
+- The project focuses on clarity and simplicity
 
 Feel free to modify and extend it!

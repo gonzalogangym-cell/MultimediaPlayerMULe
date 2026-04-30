@@ -1,13 +1,15 @@
 
 import sys
 import os
+import json
+import subprocess
 
 # ================================
 # PYQT5 IMPORTS (GUI)
 # ================================
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QPushButton, QSlider, QLabel, QFileDialog, QShortcut
+    QPushButton, QSlider, QLabel, QFileDialog, QShortcut, QMessageBox
 )
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QKeyEvent, QKeySequence
@@ -40,12 +42,20 @@ class MultimediaPlayer(QMainWindow):
         # Create VLC media player
         self.player = self.instance.media_player_new()
 
+        # Detect ffprobe availability for technical metadata extraction
+        self.ffprobe_executable = self.find_ffprobe_executable()
+
         # State variables
         self.current_file = None
         self.is_fullscreen = False
         self.pending_seek_ms = 0
         self.is_muted = False
         self.last_volume_before_mute = 50
+        self.playback_speeds = [1.0, 2.0, 0.5]
+        self.playback_speed_index = 0
+        self.texture_colors = ["#2f3a4a", "#0f5f1f", "#7a1f1f", "#153d8a"]
+        self.texture_labels = ["Default", "Green", "Red", "Blue"]
+        self.texture_index = 0
 
         # Build the interface
         self.setup_ui()
@@ -66,7 +76,7 @@ class MultimediaPlayer(QMainWindow):
     # ================================
     def setup_ui(self):
 
-        self.setWindowTitle("Simple Multimedia Player")
+        self.setWindowTitle("Multimedia Player MULe")
         self.setGeometry(100, 100, 1100, 750)
 
         # Central widget
@@ -85,10 +95,16 @@ class MultimediaPlayer(QMainWindow):
         # ================================
         # VIDEO DISPLAY AREA
         # ================================
+        self.video_container = QWidget()
+        video_layout = QVBoxLayout()
+        video_layout.setContentsMargins(8, 8, 8, 8)
+        self.video_container.setLayout(video_layout)
+
         self.video_frame = QWidget()
         self.video_frame.setStyleSheet("background-color: black;")
         self.video_frame.setMinimumHeight(550)
-        main_layout.addWidget(self.video_frame, 1)
+        video_layout.addWidget(self.video_frame)
+        main_layout.addWidget(self.video_container, 1)
 
         # ================================
         # OPEN FILE BUTTON
@@ -121,6 +137,26 @@ class MultimediaPlayer(QMainWindow):
         self.mute_button = QPushButton("Mute")
         self.mute_button.clicked.connect(self.toggle_mute)
         buttons_layout.addWidget(self.mute_button)
+
+        self.speed_button = QPushButton("Speed x1")
+        self.speed_button.clicked.connect(self.cycle_playback_speed)
+        buttons_layout.addWidget(self.speed_button)
+
+        self.texture_button = QPushButton("Texture: Default")
+        self.texture_button.clicked.connect(self.cycle_texture)
+        buttons_layout.addWidget(self.texture_button)
+
+        self.info_button = QPushButton("Info")
+        self.info_button.clicked.connect(self.show_media_info)
+        buttons_layout.addWidget(self.info_button)
+
+        self.export_button = QPushButton("Export Info")
+        self.export_button.clicked.connect(self.export_media_info)
+        buttons_layout.addWidget(self.export_button)
+
+        self.academic_button = QPushButton("Academic Analysis")
+        self.academic_button.clicked.connect(self.show_academic_analysis)
+        buttons_layout.addWidget(self.academic_button)
 
         # Fullscreen button
         self.fullscreen_button = QPushButton("Full Screen")
@@ -174,7 +210,7 @@ class MultimediaPlayer(QMainWindow):
         # ================================
         # INFO LABEL (SHORTCUTS)
         # ================================
-        info_label = QLabel("Shortcuts: Space play/pause, Left/Right seek 10s, M mute, R restart, F full screen, Esc exit")
+        info_label = QLabel("Shortcuts: Space play/pause, Left/Right seek 10s, M mute, R restart, S speed, T texture, F full screen, Esc exit")
         main_layout.addWidget(info_label)
 
         central_widget.setLayout(main_layout)
@@ -182,6 +218,7 @@ class MultimediaPlayer(QMainWindow):
         # Set initial volume
         self.player.audio_set_volume(50)
         self.apply_dark_theme()
+        self.apply_texture_background()
         self.setup_shortcuts()
 
     def setup_shortcuts(self):
@@ -204,6 +241,14 @@ class MultimediaPlayer(QMainWindow):
         self.shortcut_restart = QShortcut(QKeySequence(Qt.Key_R), self)
         self.shortcut_restart.setContext(Qt.ApplicationShortcut)
         self.shortcut_restart.activated.connect(self.restart_media)
+
+        self.shortcut_speed = QShortcut(QKeySequence(Qt.Key_S), self)
+        self.shortcut_speed.setContext(Qt.ApplicationShortcut)
+        self.shortcut_speed.activated.connect(self.cycle_playback_speed)
+
+        self.shortcut_texture = QShortcut(QKeySequence(Qt.Key_T), self)
+        self.shortcut_texture.setContext(Qt.ApplicationShortcut)
+        self.shortcut_texture.activated.connect(self.cycle_texture)
 
     def apply_dark_theme(self):
         self.setStyleSheet("""
@@ -297,6 +342,8 @@ class MultimediaPlayer(QMainWindow):
         if self.current_file:
             self.player.play()
             self.timer.start()
+            self.apply_playback_speed()
+            QTimer.singleShot(40, self.apply_playback_speed)
 
     def pause_media(self):
         self.player.pause()
@@ -325,6 +372,30 @@ class MultimediaPlayer(QMainWindow):
         if not self.player.is_playing():
             self.play_media()
 
+    def apply_playback_speed(self):
+        speed = self.playback_speeds[self.playback_speed_index]
+        self.player.set_rate(speed)
+
+    def cycle_playback_speed(self):
+        self.playback_speed_index = (self.playback_speed_index + 1) % len(self.playback_speeds)
+        speed = self.playback_speeds[self.playback_speed_index]
+        self.speed_button.setText(f"Speed x{speed:g}")
+        if self.current_file:
+            self.apply_playback_speed()
+
+    def apply_texture_background(self):
+        color = self.texture_colors[self.texture_index]
+        self.video_container.setStyleSheet(
+            f"background-color: #0f1319; border: 2px solid {color}; border-radius: 12px;"
+        )
+        self.video_frame.setStyleSheet("background-color: black; border: none;")
+        texture_label = self.texture_labels[self.texture_index]
+        self.texture_button.setText(f"Texture: {texture_label}")
+
+    def cycle_texture(self):
+        self.texture_index = (self.texture_index + 1) % len(self.texture_colors)
+        self.apply_texture_background()
+
     def toggle_play_pause(self):
         if not self.current_file:
             return
@@ -332,6 +403,372 @@ class MultimediaPlayer(QMainWindow):
             self.pause_media()
         else:
             self.play_media()
+
+    def readable_track_name(self, name):
+        if isinstance(name, bytes):
+            try:
+                return name.decode('utf-8', errors='replace')
+            except Exception:
+                return str(name)
+        return str(name)
+
+    def find_ffprobe_executable(self):
+        candidates = []
+        env_path = os.getenv('FFPROBE_PATH')
+        if env_path:
+            candidates.append(env_path)
+        if sys.platform == 'win32':
+            candidates.extend([
+                r'C:\Program Files\ffmpeg\bin\ffprobe.exe',
+                r'C:\Program Files (x86)\ffmpeg\bin\ffprobe.exe',
+            ])
+        candidates.append('ffprobe')
+        for cmd in candidates:
+            if not cmd:
+                continue
+            try:
+                result = subprocess.run([cmd, '-version'], capture_output=True, text=True, timeout=2)
+                if result.returncode == 0:
+                    return cmd
+            except Exception:
+                continue
+        return None
+
+    def get_ffprobe_info(self, file_path):
+        """Extract technical information using ffprobe"""
+        if not self.ffprobe_executable:
+            return None
+        try:
+            cmd = [
+                self.ffprobe_executable, '-v', 'error', '-print_format', 'json',
+                '-show_format', '-show_streams', file_path
+            ]
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
+            if result.returncode == 0:
+                return json.loads(result.stdout)
+        except Exception:
+            pass
+        return None
+
+    def format_bitrate(self, bitrate_str):
+        """Convert bitrate from string to human-readable format"""
+        if not bitrate_str:
+            return "N/A"
+        try:
+            bitrate = int(bitrate_str)
+            if bitrate >= 1000000:
+                return f"{bitrate / 1000000:.2f} Mbps"
+            elif bitrate >= 1000:
+                return f"{bitrate / 1000:.2f} kbps"
+            else:
+                return f"{bitrate} bps"
+        except:
+            return bitrate_str
+
+    def show_media_info(self):
+        if not self.current_file:
+            QMessageBox.information(self, "Media Information", "No media file is loaded.")
+            return
+
+        media = self.player.get_media()
+        if media is None:
+            QMessageBox.warning(self, "Media Information", "No media object available.")
+            return
+
+        try:
+            media.parse()
+        except Exception:
+            pass
+
+        duration_ms = media.get_duration()
+        duration_text = self.format_time(duration_ms) if duration_ms and duration_ms > 0 else "Unknown"
+
+        title = media.get_meta(vlc.Meta.Title) or "N/A"
+        artist = media.get_meta(vlc.Meta.Artist) or "N/A"
+        genre = media.get_meta(vlc.Meta.Genre) or "N/A"
+
+        info_text = (
+            f"FILE INFORMATION\n"
+            f"File: {os.path.basename(self.current_file)}\n"
+            f"Title: {title}\n"
+            f"Artist: {artist}\n"
+            f"Genre: {genre}\n"
+            f"Duration: {duration_text}\n\n"
+        )
+
+        # Get technical information from ffprobe
+        ffprobe_data = self.get_ffprobe_info(self.current_file)
+        if ffprobe_data:
+            format_info = ffprobe_data.get('format', {})
+            streams = ffprobe_data.get('streams', [])
+
+            # Container/Format info
+            format_name = format_info.get('format_name', 'N/A')
+            info_text += f"CONTAINER / FORMAT\n"
+            info_text += f"Container: {format_name}\n"
+            if 'bit_rate' in format_info:
+                info_text += f"Overall Bitrate: {self.format_bitrate(format_info.get('bit_rate'))}\n"
+            info_text += "\n"
+
+            # Count streams
+            video_streams = [s for s in streams if s.get('codec_type') == 'video']
+            audio_streams = [s for s in streams if s.get('codec_type') == 'audio']
+            subtitle_streams = [s for s in streams if s.get('codec_type') == 'subtitle']
+
+            info_text += f"STREAM SUMMARY\n"
+            info_text += f"Video Tracks: {len(video_streams)}\n"
+            info_text += f"Audio Tracks: {len(audio_streams)}\n"
+            info_text += f"Subtitle Tracks: {len(subtitle_streams)}\n\n"
+
+            # Video codec details
+            if video_streams:
+                info_text += f"VIDEO CODEC INFORMATION\n"
+                for i, stream in enumerate(video_streams, 1):
+                    if len(video_streams) > 1:
+                        info_text += f"Track {i}:\n"
+                    codec_name = stream.get('codec_name', 'N/A')
+                    codec_long = stream.get('codec_long_name', 'N/A')
+                    width = stream.get('width', 'N/A')
+                    height = stream.get('height', 'N/A')
+                    fps = stream.get('r_frame_rate', 'N/A')
+                    bit_rate = stream.get('bit_rate', 'N/A')
+
+                    info_text += f"Codec: {codec_name} ({codec_long})\n"
+                    info_text += f"Resolution: {width}x{height}\n"
+                    info_text += f"Frame Rate: {fps} FPS\n"
+                    info_text += f"Bitrate: {self.format_bitrate(bit_rate)}\n"
+                    if 'duration' in stream:
+                        info_text += f"Duration: {float(stream['duration']):.2f}s\n"
+                    info_text += "\n"
+
+            # Audio codec details
+            if audio_streams:
+                info_text += f"AUDIO CODEC INFORMATION\n"
+                for i, stream in enumerate(audio_streams, 1):
+                    if len(audio_streams) > 1:
+                        info_text += f"Track {i}:\n"
+                    codec_name = stream.get('codec_name', 'N/A')
+                    codec_long = stream.get('codec_long_name', 'N/A')
+                    sample_rate = stream.get('sample_rate', 'N/A')
+                    channels = stream.get('channels', 'N/A')
+                    bit_rate = stream.get('bit_rate', 'N/A')
+                    lang = stream.get('tags', {}).get('language', 'Unknown')
+
+                    info_text += f"Codec: {codec_name} ({codec_long})\n"
+                    info_text += f"Language: {lang}\n"
+                    info_text += f"Sample Rate: {sample_rate} Hz\n"
+                    info_text += f"Channels: {channels}\n"
+                    info_text += f"Bitrate: {self.format_bitrate(bit_rate)}\n"
+                    info_text += "\n"
+
+            # Subtitle info
+            if subtitle_streams:
+                info_text += f"SUBTITLE INFORMATION\n"
+                for i, stream in enumerate(subtitle_streams, 1):
+                    codec_name = stream.get('codec_name', 'N/A')
+                    lang = stream.get('tags', {}).get('language', 'Unknown')
+                    info_text += f"{i}. {codec_name} - {lang}\n"
+                info_text += "\n"
+        else:
+            info_text += f"STREAM INFORMATION (from VLC)\n"
+
+        audio_desc = self.player.audio_get_track_description()
+        if audio_desc:
+            info_text += "Audio tracks:\n"
+            if isinstance(audio_desc, (list, tuple)):
+                for item in audio_desc:
+                    if isinstance(item, tuple) and len(item) >= 2:
+                        info_text += f"  - {self.readable_track_name(item[1])} (id={item[0]})\n"
+                    elif hasattr(item, 'name') and hasattr(item, 'id'):
+                        info_text += f"  - {self.readable_track_name(item.name)} (id={item.id})\n"
+            else:
+                while audio_desc:
+                    info_text += f"  - {self.readable_track_name(audio_desc.name)} (id={audio_desc.id})\n"
+                    audio_desc = audio_desc.next
+        else:
+            info_text += "Audio tracks: None\n"
+
+        spu_desc = self.player.video_get_spu_description()
+        if spu_desc:
+            info_text += "\nSubtitle tracks:\n"
+            if isinstance(spu_desc, (list, tuple)):
+                for item in spu_desc:
+                    if isinstance(item, tuple) and len(item) >= 2:
+                        info_text += f"  - {self.readable_track_name(item[1])} (id={item[0]})\n"
+                    elif hasattr(item, 'name') and hasattr(item, 'id'):
+                        info_text += f"  - {self.readable_track_name(item.name)} (id={item.id})\n"
+            else:
+                while spu_desc:
+                    info_text += f"  - {self.readable_track_name(spu_desc.name)} (id={spu_desc.id})\n"
+                    spu_desc = spu_desc.next
+        else:
+            info_text += "\nSubtitle tracks: None\n"
+
+        QMessageBox.information(self, "Media Information", info_text)
+
+    def export_media_info(self):
+        if not self.current_file:
+            QMessageBox.information(self, "Export Media Information", "No media file is loaded.")
+            return
+
+        # Get the ffprobe data
+        ffprobe_data = self.get_ffprobe_info(self.current_file)
+        if not ffprobe_data:
+            QMessageBox.warning(self, "Export Media Information", "Could not extract technical information.")
+            return
+
+        # Ask user for save location
+        file_filter = "JSON Files (*.json);;All Files (*)"
+        save_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save Media Information",
+            os.path.splitext(self.current_file)[0] + "_info.json",
+            file_filter
+        )
+
+        if save_path:
+            try:
+                with open(save_path, 'w', encoding='utf-8') as f:
+                    json.dump(ffprobe_data, f, indent=2, ensure_ascii=False)
+                QMessageBox.information(self, "Export Successful", f"Media information exported to:\n{save_path}")
+            except Exception as e:
+                QMessageBox.warning(self, "Export Failed", f"Error saving file: {str(e)}")
+
+    def show_academic_analysis(self):
+        if not self.current_file:
+            QMessageBox.information(self, "Academic Analysis", "No media file is loaded.")
+            return
+
+        ffprobe_data = self.get_ffprobe_info(self.current_file)
+        if not ffprobe_data:
+            QMessageBox.warning(self, "Academic Analysis", "Could not extract technical information.")
+            return
+
+        analysis_text = "MULTIMEDIA ACADEMIC ANALYSIS\n\n"
+
+        format_info = ffprobe_data.get('format', {})
+        streams = ffprobe_data.get('streams', [])
+
+        # Basic file info
+        try:
+            file_size = int(format_info.get('size', 0))
+        except (ValueError, TypeError):
+            file_size = 0
+        
+        try:
+            duration = float(format_info.get('duration', 0))
+        except (ValueError, TypeError):
+            duration = 0.0
+        
+        try:
+            bitrate = int(format_info.get('bit_rate', 0))
+        except (ValueError, TypeError):
+            bitrate = 0
+
+        analysis_text += "FILE INFORMATION\n"
+        analysis_text += f"Size: {file_size / (1024*1024):.2f} MB\n"
+        analysis_text += f"Duration: {duration:.2f} seconds\n"
+        analysis_text += f"Total Bitrate: {bitrate / 1000:.0f} kbps\n\n"
+
+        video_streams = [s for s in streams if s.get('codec_type') == 'video']
+        if video_streams:
+            video = video_streams[0]
+            width = int(video.get('width', 0))
+            height = int(video.get('height', 0))
+            fps_str = video.get('r_frame_rate', '30/1')
+            try:
+                if '/' in fps_str:
+                    num, den = fps_str.split('/')
+                    fps = float(num) / float(den)
+                else:
+                    fps = float(fps_str)
+            except:
+                fps = 30.0
+            try:
+                video_bitrate = int(video.get('bit_rate', 0)) / 1000
+            except (ValueError, TypeError):
+                video_bitrate = 0.0
+            codec = video.get('codec_name', '').upper()
+
+            analysis_text += "VIDEO ANALYSIS\n"
+            analysis_text += f"Codec: {codec}\n"
+            analysis_text += f"Resolution: {width}x{height}\n"
+            analysis_text += f"Frame Rate: {fps:.2f} FPS\n"
+            analysis_text += f"Video Bitrate: {video_bitrate:.0f} kbps\n"
+
+            if width >= 3840:
+                res_cat = "8K Ultra HD"
+            elif width >= 1920:
+                res_cat = "Full HD (1080p)"
+            elif width >= 1280:
+                res_cat = "HD (720p)"
+            else:
+                res_cat = "SD"
+            analysis_text += f"Category: {res_cat}\n"
+
+            if 'H264' in codec:
+                analysis_text += "• Standard: H.264/AVC (MPEG-4 Part 10)\n"
+                analysis_text += "• Year: 2003\n"
+                analysis_text += "• Efficiency: Good compression with quality\n"
+            elif 'H265' in codec or 'HEVC' in codec:
+                analysis_text += "• Standard: H.265/HEVC\n"
+                analysis_text += "• Year: 2013\n"
+                analysis_text += "• Efficiency: 50% better than H.264\n"
+
+            uncompressed_size = (width * height * 24 * duration * fps) / 8 / (1024*1024*1024)
+            compressed_size = file_size / (1024*1024*1024)
+            if uncompressed_size > 0 and compressed_size > 0:
+                compression_ratio = uncompressed_size / compressed_size
+                space_saved = (1 - 1/compression_ratio) * 100
+                analysis_text += f"\nCOMPRESSION ANALYSIS\n"
+                analysis_text += f"Uncompressed Size: {uncompressed_size:.2f} GB\n"
+                analysis_text += f"Compressed Size: {compressed_size:.2f} GB\n"
+                analysis_text += f"Compression Ratio: {compression_ratio:.0f}:1\n"
+                analysis_text += f"Space Saved: {space_saved:.1f}%\n"
+
+        audio_streams = [s for s in streams if s.get('codec_type') == 'audio']
+        if audio_streams:
+            audio = audio_streams[0]
+            audio_codec = audio.get('codec_name', '').upper()
+            sample_rate = int(audio.get('sample_rate', 0))
+            channels = int(audio.get('channels', 0))
+            try:
+                audio_bitrate = int(audio.get('bit_rate', 0)) / 1000
+            except (ValueError, TypeError):
+                audio_bitrate = 0.0
+
+            analysis_text += f"\nAUDIO ANALYSIS\n"
+            analysis_text += f"Codec: {audio_codec}\n"
+            analysis_text += f"Sample Rate: {sample_rate} Hz\n"
+            analysis_text += f"Channels: {channels}\n"
+            analysis_text += f"Audio Bitrate: {audio_bitrate:.0f} kbps\n"
+
+            if sample_rate >= 44100 and audio_bitrate >= 128:
+                quality = "High quality"
+            elif sample_rate >= 22050 and audio_bitrate >= 64:
+                quality = "Medium quality"
+            else:
+                quality = "Low quality"
+            analysis_text += f"Estimated Quality: {quality}\n"
+
+        container = format_info.get('format_name', '').split(',')[0].upper()
+        analysis_text += f"\nCONTAINER ANALYSIS\n"
+        analysis_text += f"Format: {container}\n"
+        if 'MP4' in container:
+            analysis_text += "• Standard: MPEG-4 Part 14\n"
+            analysis_text += "• Usage: Streaming, storage\n"
+        elif 'MKV' in container:
+            analysis_text += "• Format: Matroska\n"
+            analysis_text += "• Advantage: Multiple tracks, metadata\n"
+
+        analysis_text += f"\nACADEMIC CONCLUSIONS\n"
+        analysis_text += "• The file uses industry standard codecs\n"
+        analysis_text += "• Compression enables efficient distribution\n"
+        analysis_text += "• Compatible with most modern devices\n"
+        if video_streams:
+            analysis_text += f"• Resolution suitable for {res_cat.lower()}\n"
+
+        QMessageBox.information(self, "Academic Analysis", analysis_text)
 
     def toggle_mute(self):
         self.is_muted = not self.is_muted
