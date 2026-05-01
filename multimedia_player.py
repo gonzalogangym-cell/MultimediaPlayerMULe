@@ -11,8 +11,8 @@ from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QSlider, QLabel, QFileDialog, QShortcut, QMessageBox
 )
-from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtGui import QKeyEvent, QKeySequence
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal
+from PyQt5.QtGui import QKeyEvent, QKeySequence, QMouseEvent
 
 # ================================
 # DETECT VLC PATH (WINDOWS ONLY)
@@ -26,6 +26,22 @@ if sys.platform == "win32":
 
 # Import VLC (multimedia backend)
 import vlc
+
+
+# ================================
+# CUSTOM SLIDER WITH CLICK SUPPORT
+# ================================
+class ClickableSlider(QSlider):
+    """Custom slider that responds to clicks anywhere on the bar"""
+    clicked = pyqtSignal(int)
+    
+    def mousePressEvent(self, event: QMouseEvent):
+        if event.button() == Qt.LeftButton:
+            # Calculate position based on click location
+            value = self.minimum() + (self.maximum() - self.minimum()) * event.x() / self.width()
+            self.setValue(int(value))
+            self.clicked.emit(int(value))
+        super().mousePressEvent(event)
 
 
 # ================================
@@ -110,11 +126,9 @@ class MultimediaPlayer(QMainWindow):
         # OPEN FILE BUTTON
         # ================================
         open_layout = QHBoxLayout()
-
-        self.open_button = QPushButton("Open File")
-        self.open_button.clicked.connect(self.open_file)
-        open_layout.addWidget(self.open_button)
-
+        open_button = QPushButton("Open File")
+        open_button.clicked.connect(self.open_file)
+        open_layout.addWidget(open_button)
         main_layout.addLayout(open_layout)
 
         # ================================
@@ -122,17 +136,17 @@ class MultimediaPlayer(QMainWindow):
         # ================================
         buttons_layout = QHBoxLayout()
 
-        self.play_button = QPushButton("Play")
-        self.play_button.clicked.connect(self.play_media)
-        buttons_layout.addWidget(self.play_button)
+        play_button = QPushButton("Play")
+        play_button.clicked.connect(self.play_media)
+        buttons_layout.addWidget(play_button)
 
-        self.pause_button = QPushButton("Pause")
-        self.pause_button.clicked.connect(self.pause_media)
-        buttons_layout.addWidget(self.pause_button)
+        pause_button = QPushButton("Pause")
+        pause_button.clicked.connect(self.pause_media)
+        buttons_layout.addWidget(pause_button)
 
-        self.stop_button = QPushButton("Stop")
-        self.stop_button.clicked.connect(self.stop_media)
-        buttons_layout.addWidget(self.stop_button)
+        stop_button = QPushButton("Stop")
+        stop_button.clicked.connect(self.stop_media)
+        buttons_layout.addWidget(stop_button)
 
         self.mute_button = QPushButton("Mute")
         self.mute_button.clicked.connect(self.toggle_mute)
@@ -146,19 +160,18 @@ class MultimediaPlayer(QMainWindow):
         self.texture_button.clicked.connect(self.cycle_texture)
         buttons_layout.addWidget(self.texture_button)
 
-        self.info_button = QPushButton("Info")
-        self.info_button.clicked.connect(self.show_media_info)
-        buttons_layout.addWidget(self.info_button)
+        info_button = QPushButton("Info")
+        info_button.clicked.connect(self.show_media_info)
+        buttons_layout.addWidget(info_button)
 
-        self.export_button = QPushButton("Export Info")
-        self.export_button.clicked.connect(self.export_media_info)
-        buttons_layout.addWidget(self.export_button)
+        export_button = QPushButton("Export Info")
+        export_button.clicked.connect(self.export_media_info)
+        buttons_layout.addWidget(export_button)
 
-        self.academic_button = QPushButton("Academic Analysis")
-        self.academic_button.clicked.connect(self.show_academic_analysis)
-        buttons_layout.addWidget(self.academic_button)
+        academic_button = QPushButton("Academic Analysis")
+        academic_button.clicked.connect(self.show_academic_analysis)
+        buttons_layout.addWidget(academic_button)
 
-        # Fullscreen button
         self.fullscreen_button = QPushButton("Full Screen")
         self.fullscreen_button.clicked.connect(self.toggle_fullscreen)
         buttons_layout.addWidget(self.fullscreen_button)
@@ -168,9 +181,10 @@ class MultimediaPlayer(QMainWindow):
         # ================================
         # PROGRESS BAR (TIMELINE)
         # ================================
-        self.position_slider = QSlider(Qt.Horizontal)
+        self.position_slider = ClickableSlider(Qt.Horizontal)
         self.position_slider.setRange(0, 1000)
-        self.position_slider.sliderMoved.connect(self.set_position)
+        self.position_slider.sliderMoved.connect(self.on_slider_changed)
+        self.position_slider.clicked.connect(self.on_slider_changed)
         main_layout.addWidget(self.position_slider)
 
         # ================================
@@ -196,10 +210,11 @@ class MultimediaPlayer(QMainWindow):
         volume_text = QLabel("Volume:")
         volume_layout.addWidget(volume_text)
 
-        self.volume_slider = QSlider(Qt.Horizontal)
+        self.volume_slider = ClickableSlider(Qt.Horizontal)
         self.volume_slider.setRange(0, 100)
         self.volume_slider.setValue(50)
-        self.volume_slider.valueChanged.connect(self.change_volume)
+        self.volume_slider.valueChanged.connect(self.on_volume_changed)
+        self.volume_slider.clicked.connect(self.on_volume_changed)
         volume_layout.addWidget(self.volume_slider)
 
         self.volume_label = QLabel("50%")
@@ -222,33 +237,13 @@ class MultimediaPlayer(QMainWindow):
         self.setup_shortcuts()
 
     def setup_shortcuts(self):
-        self.shortcut_space = QShortcut(QKeySequence(Qt.Key_Space), self)
-        self.shortcut_space.setContext(Qt.ApplicationShortcut)
-        self.shortcut_space.activated.connect(self.toggle_play_pause)
-
-        self.shortcut_right = QShortcut(QKeySequence(Qt.Key_Right), self)
-        self.shortcut_right.setContext(Qt.ApplicationShortcut)
-        self.shortcut_right.activated.connect(lambda: self.seek_relative_ms(10000))
-
-        self.shortcut_left = QShortcut(QKeySequence(Qt.Key_Left), self)
-        self.shortcut_left.setContext(Qt.ApplicationShortcut)
-        self.shortcut_left.activated.connect(lambda: self.seek_relative_ms(-10000))
-
-        self.shortcut_mute = QShortcut(QKeySequence(Qt.Key_M), self)
-        self.shortcut_mute.setContext(Qt.ApplicationShortcut)
-        self.shortcut_mute.activated.connect(self.toggle_mute)
-
-        self.shortcut_restart = QShortcut(QKeySequence(Qt.Key_R), self)
-        self.shortcut_restart.setContext(Qt.ApplicationShortcut)
-        self.shortcut_restart.activated.connect(self.restart_media)
-
-        self.shortcut_speed = QShortcut(QKeySequence(Qt.Key_S), self)
-        self.shortcut_speed.setContext(Qt.ApplicationShortcut)
-        self.shortcut_speed.activated.connect(self.cycle_playback_speed)
-
-        self.shortcut_texture = QShortcut(QKeySequence(Qt.Key_T), self)
-        self.shortcut_texture.setContext(Qt.ApplicationShortcut)
-        self.shortcut_texture.activated.connect(self.cycle_texture)
+        QShortcut(QKeySequence(Qt.Key_Space), self, self.toggle_play_pause)
+        QShortcut(QKeySequence(Qt.Key_Right), self, lambda: self.seek_relative_ms(10000))
+        QShortcut(QKeySequence(Qt.Key_Left), self, lambda: self.seek_relative_ms(-10000))
+        QShortcut(QKeySequence(Qt.Key_M), self, self.toggle_mute)
+        QShortcut(QKeySequence(Qt.Key_R), self, self.restart_media)
+        QShortcut(QKeySequence(Qt.Key_S), self, self.cycle_playback_speed)
+        QShortcut(QKeySequence(Qt.Key_T), self, self.cycle_texture)
 
     def apply_dark_theme(self):
         self.setStyleSheet("""
@@ -835,16 +830,17 @@ class MultimediaPlayer(QMainWindow):
     # ================================
     # VOLUME CONTROL
     # ================================
-    def change_volume(self, value):
+    def on_volume_changed(self, value):
         self.player.audio_set_volume(value)
         self.volume_label.setText(f"{value}%")
 
     # ================================
     # SEEK POSITION (SLIDER)
     # ================================
-    def set_position(self, value):
-        # VLC uses values from 0.0 to 1.0
-        self.player.set_position(value / 1000)
+    def on_slider_changed(self, value):
+        """Handle slider drag or click"""
+        if self.current_file:
+            self.player.set_position(value / 1000)
 
     # ================================
     # UPDATE UI (TIME + SLIDER)

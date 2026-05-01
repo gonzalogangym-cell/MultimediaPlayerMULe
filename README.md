@@ -1,103 +1,82 @@
 # Multimedia Player MULe
 
-A simple yet powerful multimedia player for academic multimedia analysis, built with Python, PyQt5 and VLC.
+A simple and clean multimedia player built with Python, PyQt5, and VLC. Perfect for playing audio and video files with keyboard shortcuts and technical analysis features.
 
 ## Features
 
-✅ **Basic playback**: Play, Pause, Stop, Volume, Seek
-✅ **Fullscreen** with keyboard shortcuts
-✅ **Technical information**: Codec, resolution, bitrate, audio/video tracks
-✅ **Export metadata**: Save technical information to JSON
-✅ **Academic Analysis**: Technical interpretation with multimedia explanations
-✅ **Simple interface**: No unnecessary complications
-✅ **Clean code**: Easy to understand and modify
+- 🎬 Play, pause, and stop controls
+- 🔊 Volume control with click-to-set support
+- ⏩ Click anywhere on the progress bar to seek
+- ⌨️ Keyboard shortcuts for quick control
+- 🖥️ Fullscreen mode
+- 📊 Media info and technical analysis
+- 💾 Export metadata to JSON
+- 🎨 Multiple texture themes
 
-## Requirements
+## Quick Start
 
-- Python 3.6+
-- PyQt5
-- VLC Media Player
-- FFmpeg (for technical analysis)
+1. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-## Installation
+2. **Make sure VLC is installed** on your system
 
-### 1. Install Python 3
-
-Download from: https://www.python.org/
-
-### 2. Install libraries
-
-```bash
-pip install PyQt5 python-vlc
-```
-
-### 3. Install VLC
-
-Download from: https://www.videolan.org/vlc/
-
-### 4. Install FFmpeg (for technical analysis)
-
-```bash
-winget install --id=Gyan.FFmpeg
-```
+3. **Run the player:**
+   ```bash
+   python multimedia_player.py
+   ```
 
 ## Usage
 
-```bash
-python multimedia_player.py
+- **Open File**: Click "Open File" to load a media file
+- **Play/Pause/Stop**: Use the control buttons
+- **Seek**: Click anywhere on the progress bar to jump to that position
+- **Volume**: Click on the volume slider to adjust
+- **Fullscreen**: Press `F` or click the "Full Screen" button
+
+## Keyboard Shortcuts
+
+| Key | Action |
+|-----|--------|
+| Space | Play/Pause |
+| ← / → | Seek ±10 seconds |
+| M | Mute/Unmute |
+| R | Restart |
+| S | Change speed |
+| T | Change theme |
+| F | Fullscreen |
+| Esc | Exit fullscreen |
+
+## Supported Formats
+
+**Audio**: MP3, WAV  
+**Video**: MP4, AVI, MKV, MOV
+
+## System Requirements
+
+- Python 3.7+
+- PyQt5
+- VLC Media Player
+- FFprobe (optional, for advanced info)
+
+## Documentation
+
+For detailed information about the code structure and how everything works, see [DOCUMENTATION.md](DOCUMENTATION.md)
+
+## Project Structure
+
+```
+multimedia_player.py    - Main application
+requirements.txt        - Dependencies
+DOCUMENTATION.md        - Full documentation
+install.bat            - Windows installation helper
 ```
 
-### Controls:
+## License
 
-- **Open File**: Load multimedia file
-- **Play/Pause/Stop**: Basic controls
-- **Info**: View technical information of the file
-- **Export Info**: Save metadata to JSON
-- **Academic Analysis**: Technical interpretation with multimedia explanations
+Academic project - MULe Multimedia Learning
 
-### Keyboard shortcuts:
-
-- **Space**: Play/Pause
-- **Arrows**: Seek ±10s
-- **M**: Mute
-- **F**: Fullscreen
-- **Esc**: Exit fullscreen
-
-## What is **pycache**?
-
-It is a folder that Python creates automatically to store compiled bytecode files (.pyc) that speed up execution. **It is not part of your source code** - you can ignore it or delete it. It is already in .gitignore so Git won't track it.
-
-## How to Run
-
-1. Open Command Prompt in the folder where `multimedia_player.py` is located
-2. Run:
-
-```bash
-python multimedia_player.py
-```
-
-Or:
-
-```bash
-python3 multimedia_player.py
-```
-
-## How to Use
-
-1. **Open a File**
-   Click the "Open File" button and select a media file
-
-2. **Play**
-   Click "Play" to start playback
-
-3. **Pause**
-   Click "Pause" to pause (click Play to resume)
-
-4. **Stop**
-   Click "Stop" to stop playback and reset
-
-5. **Volume**
-   Use the slider to adjust volume (0–100%)
 
 6. **Progress Bar**
    Drag the slider to move through the media
@@ -116,7 +95,6 @@ Supported formats depend on VLC, including:
 
 - **Audio**: MP3, WAV, FLAC, AAC, OGG
 - **Video**: MP4, AVI, MKV, MOV, FLV, WebM
-- And many more
 
 ## Code Structure
 
@@ -164,5 +142,3 @@ pip install python-vlc
 - PyQt5 is used for the interface
 - VLC is used as the playback engine to ensure compatibility with multiple formats
 - The project focuses on clarity and simplicity
-
-Feel free to modify and extend it!
